@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5ead7" />
+    <meta name="description" content="A practical, pixel-powered way to learn Cantonese." />
+    <title>Learn Cantonese</title>
+    <link rel="icon" type="image/png" href="cantonese.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="CANTONESE home">
+          <span class="brand-mark">廣東話</span>
+          <span class="brand-name">CANTONESE</span>
+        </a>
+        <button class="menu-toggle" aria-expanded="false" aria-controls="nav-links">MENU</button>
+        <nav id="nav-links" class="nav-links" aria-label="Main navigation">
+          <a href="#method">THE METHOD</a>
+          <a href="#daily">DAILY LOOP</a>
+          <a href="#phrases">PHRASES</a>
+        </nav>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+          <span class="theme-icon" aria-hidden="true">☼</span><span class="theme-label">LIGHT</span>
+        </button>
+        <a class="top-cta" href="#daily">START A SESSION <span>↗</span></a>
+      </header>
+
+      <main id="top">
+        <section class="hero section-grid">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-dot"></span> CANTONESE, UNLOCKED</p>
+            <h1>Stop memorizing.<br /><em>Start talking.</em></h1>
+            <p class="hero-text">A practical, low-pressure way to learn Cantonese — one useful phrase, one tiny habit, one real conversation at a time.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#daily">BUILD MY DAILY LOOP <span>→</span></a>
+              <a class="text-link" href="#method">How it works <span>↓</span></a>
+            </div>
+            <div class="hero-note"><span class="note-arrow">↳</span> Made for curious beginners<br />&nbsp;&nbsp;&nbsp;and rusty returners.</div>
+          </div>
+          <div class="hero-art">
+            <div class="sunburst" aria-hidden="true"></div>
+            <div class="hero-label label-top">CANTONESE<br /><strong>LEVEL 01</strong></div>
+            <div class="hero-label label-side">食飯未呀？</div>
+            <div class="logo-frame"><img src="cantonese.png" alt="Pixel art pig wearing sunglasses" /></div>
+            <div class="speech-bubble">“Ready when<br />you are.”</div>
+            <div class="hero-sticker">慢慢嚟<br /><small>take it easy</small></div>
+            <div class="ground-shadow"></div>
+          </div>
+        </section>
+
+        <section class="ticker" aria-label="Learning principle">
+          <div>LISTEN FIRST</div><span>✦</span><div>SPEAK OFTEN</div><span>✦</span><div>KEEP IT USEFUL</div><span>✦</span><div>聽 · 講 · 用</div>
+        </section>
+
+        <section id="method" class="method section-grid section-padding">
+          <div class="section-intro">
+            <p class="eyebrow">01 / THE METHOD</p>
+            <h2>Small reps.<br /><em>Big payoff.</em></h2>
+            <p>Fluency is less about knowing everything and more about having the right few things ready when you need them.</p>
+            <a class="text-link" href="#daily">See the daily loop <span>→</span></a>
+          </div>
+          <div class="method-cards">
+            <article class="method-card card-coral">
+              <div class="card-number">01</div><div class="card-icon">耳</div>
+              <h3>Hear it<br />in context.</h3><p>Train your ear with short, natural clips before you worry about perfect tones.</p><span class="card-caption">INPUT / 聽</span>
+            </article>
+            <article class="method-card card-teal">
+              <div class="card-number">02</div><div class="card-icon">口</div>
+              <h3>Say the<br />useful stuff.</h3><p>Practice phrases you can actually use at the cha chaan teng or on the MTR.</p><span class="card-caption">OUTPUT / 講</span>
+            </article>
+            <article class="method-card card-yellow">
+              <div class="card-number">03</div><div class="card-icon">用</div>
+              <h3>Make it<br />part of life.</h3><p>Turn one new phrase into a tiny daily ritual. Consistency does the heavy lifting.</p><span class="card-caption">HABIT / 用</span>
+            </article>
+          </div>
+        </section>
+
+        <section id="daily" class="daily section-padding">
+          <div class="daily-head">
+            <div><p class="eyebrow">02 / YOUR DAILY LOOP</p><h2>15 minutes.<br /><em>Every day.</em></h2></div>
+            <div class="progress-wrap"><span id="progress-label">0 / 3 COMPLETE</span><div class="progress-bar"><span id="progress-fill"></span></div></div>
+          </div>
+          <div class="daily-grid">
+            <div class="routine-list">
+              <label class="routine-item"><input type="checkbox" /><span class="check-box">✓</span><span><strong>01 / Listen</strong><small>Play one 30-second clip. Catch the rhythm.</small></span><b>05 MIN</b></label>
+              <label class="routine-item"><input type="checkbox" /><span class="check-box">✓</span><span><strong>02 / Shadow</strong><small>Repeat it back — messy is allowed.</small></span><b>05 MIN</b></label>
+              <label class="routine-item"><input type="checkbox" /><span class="check-box">✓</span><span><strong>03 / Use it</strong><small>Write one text or say it out loud.</small></span><b>05 MIN</b></label>
+              <div class="routine-footer"><span>STREAK: <strong id="streak-count">0 DAYS</strong></span><span class="tiny-spark">✦ ✦ ✦</span></div>
+            </div>
+            <div class="tip-card"><span class="tip-label">TODAY'S TIP / 小貼士</span><div class="tip-doodle">“</div><p>Don’t learn <em>more</em> words.<br />Learn the words you’ll<br /><strong>actually say.</strong></p><div class="tip-footer">— THE GWAI LO WAY</div></div>
+          </div>
+        </section>
+
+        <section id="phrases" class="phrase-section section-grid section-padding">
+          <div class="phrase-copy"><p class="eyebrow">03 / PHRASE OF THE DAY</p><h2>Sound like<br /><em>you mean it.</em></h2><p>Start with the phrases that open doors. Tap the card to reveal the Cantonese, then say it out loud.</p><button class="button button-secondary" id="next-phrase">NEXT PHRASE <span>↻</span></button></div>
+          <div class="flashcard-wrap"><button class="flashcard" id="flashcard" aria-label="Flip phrase card"><span class="flashcard-face flashcard-front"><small>TRY THIS TODAY</small><strong id="phrase-english">How are you?</strong><span class="flip-hint">TAP TO FLIP ↻</span></span><span class="flashcard-face flashcard-back"><small id="phrase-jyutping">nei5 hou2 maa3?</small><strong id="phrase-canto">你 好 嗎？</strong><span class="flip-hint">SAY IT OUT LOUD</span></span></button><div class="card-scribble">唔使驚<br /><small>don’t be shy</small></div></div>
+        </section>
+      </main>
+
+      <footer class="footer"><div class="brand"><span class="brand-mark">廣東話</span><span class="brand-name">CANTONESE</span></div><p>Language is a little braver every day.</p><span>© 2026 / MADE WITH 好奇心</span></footer>
+    </div>
+    <div class="corner-tile corner-tile-top" aria-label="Learn Cantonese">廣東話</div>
+    <div class="corner-tile corner-tile-bottom" aria-label="Take it easy">慢慢嚟</div>
+    <script src="script.js"></script>
+  </body>
+</html>
