@@ -70,9 +70,10 @@
 pip install ggk
 
 <span class="c"># 2. serve the model</span>
-ggk server engine -- \
-  --model cantonese-1.2-0.6b-q8_0.gguf \
-  --codec-model tts-tokenizer-12hz-q8_0.gguf
+ggk -m cantonese-1.2-0.6b-q8_0.gguf \
+  --adapter pig_cantonese_0.6b_adapter-test-f16.gguf \
+  --codec-model tts-tokenizer-12hz-q8_0.gguf \
+  --serve --port 8888
 
 <span class="c"># 3. speak</span>
 curl 127.0.0.1:8888/v1/audio/speech \
@@ -83,7 +84,7 @@ curl 127.0.0.1:8888/v1/audio/speech \
     <div class="wrap">
       <dl class="facts">
         <div><dt>Parameters</dt><dd>0.6B</dd></div>
-        <div><dt>Download</dt><dd>1.26 GB <small>q8_0, talker + codec</small></dd></div>
+        <div><dt>Download</dt><dd>1.30 GB <small>q8_0 talker + codec + adapter</small></dd></div>
         <div><dt>Audio</dt><dd>24 kHz mono <small>mp3 · wav · pcm</small></dd></div>
         <div><dt>Voices</dt><dd>design · clone</dd></div>
         <div><dt>API</dt><dd>OpenAI-compatible</dd></div>
@@ -104,7 +105,8 @@ curl 127.0.0.1:8888/v1/audio/speech \
       <div class="notice" id="offline" hidden>
         <strong>No server at that address yet.</strong>
         Start one, then press <button class="link-btn" type="button" id="btn-retry">retry</button>:
-        <pre><code><span class="rt">ggk</span> server engine -- --model cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf</code></pre>
+        <pre><code><span class="rt">ggk</span> -m cantonese-1.2-0.6b-q8_0.gguf --adapter pig_cantonese_0.6b_adapter-test-f16.gguf \
+    --codec-model tts-tokenizer-12hz-q8_0.gguf --serve --port 8888</code></pre>
         <span class="notice-detail" id="offline-detail"></span>
       </div>
 
@@ -136,12 +138,12 @@ curl 127.0.0.1:8888/v1/audio/speech \
 
             <div class="mode-panel" data-mode="design" hidden>
               <label class="field-label" for="voice-desc">Describe the voice</label>
-              <textarea id="voice-desc" rows="2" placeholder="A warm, low female voice, speaking slowly.">A warm, low female voice, speaking slowly.</textarea>
+              <textarea id="voice-desc" rows="2" placeholder="A warm, female voice, speaking slowly.">A warm, female voice, speaking slowly.</textarea>
               <div class="chips" id="presets" aria-label="Voice presets">
-                <button type="button" class="chip">A warm, female voice, speaking slowly.</button>
+                <button type="button" class="chip">A warm, low female voice, speaking slowly.</button>
                 <button type="button" class="chip">A calm, deep male voice.</button>
                 <button type="button" class="chip">A cheerful young woman, bright and quick.</button>
-                <button type="button" class="chip">A warm, low male voice.</button>
+                <button type="button" class="chip">A warm, low, old male voice.</button>
               </div>
             </div>
 
@@ -228,16 +230,19 @@ GGK_VULKAN=1 pip install <span class="pkg">ggk</span>    <span class="c"># Vulka
             <tbody>
               <tr><td><code>cantonese-1.2-0.6b-q8_0.gguf</code></td><td>the talker: text to speech codes</td><td class="num">0.99 GB</td></tr>
               <tr><td><code>tts-tokenizer-12hz-q8_0.gguf</code></td><td>the 12 Hz codec: speech codes to audio</td><td class="num">0.27 GB</td></tr>
-              <tr><td><code>pig_cantonese_0.6b_adapter-f16.gguf</code></td><td>optional voice adapter (LoRA), <code>--adapter</code></td><td class="num">40 MB</td></tr>
+              <tr><td><code>pig_cantonese_0.6b_adapter-test-f16.gguf</code></td><td>the voice adapter (LoRA) applied over the talker, <code>--adapter</code></td><td class="num">40 MB</td></tr>
             </tbody>
           </table>
         </li>
         <li>
           <h3>Start the server</h3>
-<pre><code><span class="rt">ggk</span> server engine -- --model cantonese-1.2-0.6b-q8_0.gguf \
-    --codec-model tts-tokenizer-12hz-q8_0.gguf</code></pre>
+          <p>The model runs on the runtime's diffusion engine; <code>--serve</code> keeps it loaded and answers over HTTP instead of writing one file.</p>
+<pre><code><span class="rt">ggk</span> -m cantonese-1.2-0.6b-q8_0.gguf \
+    --adapter pig_cantonese_0.6b_adapter-test-f16.gguf \
+    --codec-model tts-tokenizer-12hz-q8_0.gguf \
+    --serve --port 8888</code></pre>
           <p>It listens on <code>127.0.0.1:8888</code> once the model is loaded. Add <code>--api-key &lt;key&gt;</code> to require a key,
-            <code>--adapter &lt;file&gt;</code> for a voice adapter, <code>--host 0.0.0.0</code> to serve your network, <code>--n-gpu-layers 0</code> for CPU only.</p>
+            <code>--host 0.0.0.0</code> to serve your network, <code>--backend cpu</code> for CPU only. Leave out the <code>--adapter</code> line to run the talker without the adapter.</p>
         </li>
         <li>
           <h3>Generate speech</h3>
@@ -245,7 +250,7 @@ GGK_VULKAN=1 pip install <span class="pkg">ggk</span>    <span class="c"># Vulka
   -H "Content-Type: application/json" \
   -d '{"input": "今日天氣好好，我哋出去行下街啦。", "voice": "A warm, low female voice, speaking slowly."}' \
   --output speech.mp3</code></pre>
-          <p>Or skip the server and write one file: <code><span class="rt">ggk</span> -m cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf -t "你好" -o out.mp3</code></p>
+          <p>Or skip the server and write one file: drop <code>--serve</code> and give the text, <code><span class="rt">ggk</span> -m cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf -t "你好" -o out.mp3</code></p>
           <p class="callout"><strong>Windows:</strong> cmd, PowerShell and Git Bash replace Chinese characters in a <code>curl -d '…'</code> argument with <code>?</code>.
             Put the JSON in a UTF-8 file and send <code>-d @request.json</code>.</p>
         </li>

@@ -2,8 +2,9 @@
 
 > Cantonese is an open text-to-speech model for Cantonese (廣東話). It is a 0.6B
 > "talker" distributed as GGUF files and run locally with the `ggk` or
-> `gguf-core` Python package. Both ship the same engine, which serves the model
-> behind an OpenAI-compatible endpoint: `POST /v1/audio/speech`.
+> `gguf-core` Python package. Both ship the same diffusion engine, which runs the
+> model and, with `--serve`, puts it behind an OpenAI-compatible endpoint:
+> `POST /v1/audio/speech`.
 
 This file is the full, self-contained reference. Everything an agent needs to
 install the runtime, start the server and generate speech is below. No
@@ -18,7 +19,9 @@ JavaScript, login or API key is required to read it.
 - Model files (GGUF), all three are local files passed by path:
   - `cantonese-1.2-0.6b-q8_0.gguf` — the talker, about 0.99 GB. Required.
   - `tts-tokenizer-12hz-q8_0.gguf` — the 12 Hz speech codec, about 0.27 GB. Required.
-  - `pig_cantonese_0.6b_adapter-f16.gguf` — a voice LoRA adapter, about 40 MB. Optional.
+  - `pig_cantonese_0.6b_adapter-test-f16.gguf` — a voice LoRA adapter applied over the
+    talker with `--adapter`, about 40 MB. Used in the commands below; the talker
+    also runs without it.
 - Model files: https://huggingface.co/cantonese-dev
 - Runtime: `ggk` (https://github.com/gguf-io/gk) or `gguf-core`
   (https://github.com/calcuis/gguf-core). Same engine, different command name:
@@ -42,30 +45,42 @@ On Windows cmd, set the variable first: `set GGK_CUDA=1` then `pip install ggk`.
 
 ## 2. Get the model files
 
-Download the talker and the codec (and, optionally, the adapter) from
+Download the talker, the codec and the adapter from
 https://huggingface.co/cantonese-dev into one directory. The commands below
 assume they are in the current directory.
 
 ## 3. Start the server
 
+The talker runs on the diffusion engine, which is what the bare `ggk` command
+line drives. `--serve` keeps the model loaded and answers over HTTP instead of
+writing one file and exiting.
+
 ```bash
-ggk server engine -- --model cantonese-1.2-0.6b-q8_0.gguf \
-    --codec-model tts-tokenizer-12hz-q8_0.gguf
+ggk -m cantonese-1.2-0.6b-q8_0.gguf \
+    --adapter pig_cantonese_0.6b_adapter-test-f16.gguf \
+    --codec-model tts-tokenizer-12hz-q8_0.gguf \
+    --serve --port 8888
 ```
 
-With `gguf-core` the same line starts with `gguf server engine --`.
+With `gguf-core` the same line starts with `gguf -m`. Leave out the `--adapter`
+line to serve the talker without the adapter.
+
+The older launcher form, `ggk server engine -- --model <talker> --codec-model
+<codec>`, still works: it detects the talker and hands the command to this same
+diffusion-engine server.
 
 Useful options (all optional):
 
 | option | meaning |
 | --- | --- |
+| `--serve` | serve over HTTP instead of writing one file (required for the server) |
 | `--adapter <file.gguf>` | apply a voice LoRA adapter over the talker (repeatable) |
 | `--host <addr>` | listen address, default `127.0.0.1`; `0.0.0.0` for every interface |
 | `--port <n>` | default `8888` |
 | `--api-key <key>` | require `Authorization: Bearer <key>` |
 | `--alias <name>` | model id reported by `/v1/models` |
 | `--voice-dir <dir>` | keep registered cloned voices on disk, one `<name>.json` each |
-| `--n-gpu-layers 0` | run on the CPU only |
+| `--backend cpu` | run on the CPU only |
 | `--seed <n>` | default seed of every request (42); `-1` = a new take each time |
 | `--instruction "<text>"` | default voice description of every request |
 
@@ -191,7 +206,8 @@ memory unless the server was started with `--voice-dir`.
 
 ## 5. One-shot use without a server
 
-The same package generates a file directly:
+The same command without `--serve` generates one file and exits (add the
+`--adapter` line here too to use the adapter):
 
 ```bash
 ggk -m cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf \
