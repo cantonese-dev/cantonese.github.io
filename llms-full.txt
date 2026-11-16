@@ -1,0 +1,226 @@
+# Cantonese TTS — complete guide for AI agents
+
+> Cantonese is an open text-to-speech model for Cantonese (廣東話). It is a 0.6B
+> "talker" distributed as GGUF files and run locally with the `ggk` or
+> `gguf-core` Python package. Both ship the same engine, which serves the model
+> behind an OpenAI-compatible endpoint: `POST /v1/audio/speech`.
+
+This file is the full, self-contained reference. Everything an agent needs to
+install the runtime, start the server and generate speech is below. No
+JavaScript, login or API key is required to read it.
+
+## Facts
+
+- Task: text to speech. Input: text in written Cantonese (Traditional Chinese
+  characters; mixed English is accepted). Output: 24 kHz mono audio.
+- Capabilities: plain TTS, voice design (describe the voice in words), voice
+  cloning (imitate a short reference recording).
+- Model files (GGUF), all three are local files passed by path:
+  - `cantonese-1.2-0.6b-q8_0.gguf` — the talker, about 0.99 GB. Required.
+  - `tts-tokenizer-12hz-q8_0.gguf` — the 12 Hz speech codec, about 0.27 GB. Required.
+  - `pig_cantonese_0.6b_adapter-f16.gguf` — a voice LoRA adapter, about 40 MB. Optional.
+- Model files: https://huggingface.co/cantonese-dev
+- Runtime: `ggk` (https://github.com/gguf-io/gk) or `gguf-core`
+  (https://github.com/calcuis/gguf-core). Same engine, different command name:
+  `ggk` vs `gguf`. Everything below works with either; swap the first word.
+- Default server address: `http://127.0.0.1:8888`.
+- One utterance is generated at a time; concurrent requests queue.
+
+## 1. Install the runtime
+
+Python 3.8 or newer. The install compiles the engine (CPU by default, Metal on
+macOS). GPU backends are opt-in through an environment variable at install time.
+
+```bash
+pip install ggk                 # or: pip install gguf-core
+GGK_CUDA=1 pip install ggk      # NVIDIA
+GGK_HIP=1 pip install ggk       # AMD ROCm
+GGK_VULKAN=1 pip install ggk    # Vulkan
+```
+
+On Windows cmd, set the variable first: `set GGK_CUDA=1` then `pip install ggk`.
+
+## 2. Get the model files
+
+Download the talker and the codec (and, optionally, the adapter) from
+https://huggingface.co/cantonese-dev into one directory. The commands below
+assume they are in the current directory.
+
+## 3. Start the server
+
+```bash
+ggk server engine -- --model cantonese-1.2-0.6b-q8_0.gguf \
+    --codec-model tts-tokenizer-12hz-q8_0.gguf
+```
+
+With `gguf-core` the same line starts with `gguf server engine --`.
+
+Useful options (all optional):
+
+| option | meaning |
+| --- | --- |
+| `--adapter <file.gguf>` | apply a voice LoRA adapter over the talker (repeatable) |
+| `--host <addr>` | listen address, default `127.0.0.1`; `0.0.0.0` for every interface |
+| `--port <n>` | default `8888` |
+| `--api-key <key>` | require `Authorization: Bearer <key>` |
+| `--alias <name>` | model id reported by `/v1/models` |
+| `--voice-dir <dir>` | keep registered cloned voices on disk, one `<name>.json` each |
+| `--n-gpu-layers 0` | run on the CPU only |
+| `--seed <n>` | default seed of every request (42); `-1` = a new take each time |
+| `--instruction "<text>"` | default voice description of every request |
+
+The server is ready when it logs `speech endpoint: POST /v1/audio/speech`, and
+`GET /health` answers `{"status":"ok"}`. The port opens only after the model
+has loaded.
+
+## 4. Generate speech
+
+```bash
+curl http://127.0.0.1:8888/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{"input": "今日天氣好好，我哋出去行下街啦。", "voice": "A warm, low female voice, speaking slowly."}' \
+  --output speech.mp3
+```
+
+The response body is the audio file itself (not JSON). Save the bytes.
+
+Python, standard library only:
+
+```python
+import json, urllib.request
+
+req = urllib.request.Request(
+    "http://127.0.0.1:8888/v1/audio/speech",
+    data=json.dumps({
+        "input": "今日天氣好好，我哋出去行下街啦。",
+        "voice": "A warm, low female voice, speaking slowly.",
+    }).encode("utf-8"),
+    headers={"Content-Type": "application/json"},
+)
+with urllib.request.urlopen(req) as res, open("speech.mp3", "wb") as f:
+    f.write(res.read())
+```
+
+OpenAI SDK (the endpoint is OpenAI's speech API):
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://127.0.0.1:8888/v1", api_key="not-needed")
+with client.audio.speech.with_streaming_response.create(
+    model="cantonese",
+    voice="A warm, low female voice, speaking slowly.",
+    input="今日天氣好好，我哋出去行下街啦。",
+) as response:
+    response.stream_to_file("speech.mp3")
+```
+
+### Request fields — `POST /v1/audio/speech`
+
+The body is JSON (`Content-Type: application/json`), or a `multipart/form-data`
+form with the same field names when a recording is uploaded.
+
+| field | type | meaning |
+| --- | --- | --- |
+| `input` | string, required | the text to speak |
+| `voice` | string | voice design: a description of the voice in plain words, e.g. `"A calm, deep male voice."`. Or the name of a registered cloned voice. The stock OpenAI names (`alloy`, `nova`, ...) are accepted and ignored |
+| `instructions` | string | style instruction; appended to a `voice` description |
+| `response_format` | string | `mp3` (default), `wav`, or `pcm` (raw 24 kHz 16-bit mono little-endian) |
+| `stream` | boolean | `true` sends the audio with chunked transfer encoding while it is still being generated |
+| `reference_audio` | string / file | voice cloning: a recording of the voice, WAV, MP3 or FLAC. Base64 (a `data:` URI is fine) in JSON, or a file part in a form |
+| `reference_text` | string | voice cloning: the transcript of `reference_audio` |
+| `seed` | integer | default 42, so the same request returns the same audio; `-1` = random |
+| `language` | string | default `auto` |
+| `max_duration` | number | cap in seconds, default 60 |
+| `mp3_bitrate` | integer | kbps, default 64 |
+| `model` | string | accepted, not checked |
+
+Response: `200` with `Content-Type: audio/mpeg`, `audio/wav` or `audio/pcm`.
+Errors are JSON: `{"error": {"code": 400, "message": "...", "type": "invalid_request_error"}}`.
+`401` = wrong or missing API key, `400` = bad request (the message says what),
+`501` = an LLM endpoint was called on this TTS server.
+
+### Voice design
+
+Describe the voice in `voice` (or `instructions`). English descriptions work:
+gender, age, pitch, pace, mood.
+
+```json
+{"input": "多謝你嘅幫忙。", "voice": "A cheerful young woman, bright and quick."}
+```
+
+### Voice cloning
+
+Send 5 to 15 seconds of clean speech (60 s at most) as `reference_audio`.
+With `reference_text` — exactly what the recording says — the clone is
+in-context and follows the voice closely. Without it only a speaker embedding
+is used, which is looser.
+
+```bash
+curl http://127.0.0.1:8888/v1/audio/speech \
+  -F "input=<text.txt" \
+  -F "reference_audio=@voice.mp3" \
+  -F "reference_text=<transcript.txt" \
+  --output cloned.mp3
+```
+
+(`<file` reads a field from a UTF-8 file; `@file` uploads the file.)
+
+Register a voice once and reuse it by name:
+
+```bash
+curl http://127.0.0.1:8888/v1/audio/voices \
+  -F "name=uncle" -F "reference_audio=@voice.mp3" -F "reference_text=<transcript.txt"
+
+curl http://127.0.0.1:8888/v1/audio/speech -H "Content-Type: application/json" \
+  -d '{"input": "你好。", "voice": "uncle"}' --output cloned.mp3
+```
+
+A voice name is 1 to 64 letters, digits, `_` or `-`. Registered voices live in
+memory unless the server was started with `--voice-dir`.
+
+### Other endpoints
+
+| endpoint | meaning |
+| --- | --- |
+| `GET /health` | `{"status":"ok"}` once the model is loaded. No API key needed |
+| `GET /v1/models` | the model, with `meta.type = "tts"`, `meta.cloned_voices`, `meta.languages`. No API key needed |
+| `GET /v1/audio/voices` | registered cloned voices |
+| `POST /v1/audio/voices` | register a voice: `name`, `reference_audio`, `reference_text` (JSON or form) |
+| `DELETE /v1/audio/voices/<name>` | remove a voice |
+
+## 5. One-shot use without a server
+
+The same package generates a file directly:
+
+```bash
+ggk -m cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf \
+    --instruction "A warm, low female voice, speaking slowly." \
+    -t "今日天氣好好，我哋出去行下街啦。" -o out.mp3
+```
+
+`-o out.wav` writes WAV. `-r voice.mp3 --reference-text "..."` clones a voice.
+`--seed <n>` picks the take (42 by default).
+
+## Pitfalls
+
+- **Send UTF-8.** On Windows, `curl.exe -d '{"input": "中文"}'` typed in cmd,
+  PowerShell or Git Bash replaces Chinese characters with `?` before sending.
+  Put the JSON in a UTF-8 file and use `-d @request.json`, or use `-F
+  "input=<text.txt"`. The server answers `400` when the input is question
+  marks only.
+- **The response is binary.** Write the body to a file; do not parse it as
+  JSON unless the status is not 200.
+- **Start the server once and reuse it.** Loading takes a few seconds;
+  requests after that only pay for generation.
+- **Long text:** output is capped at `max_duration` seconds (60). Split long
+  text into sentences and send them one by one.
+- **Browsers:** the server sends `Access-Control-Allow-Origin: *`, so a web
+  page can call it directly. Use `--api-key` if the port is reachable by
+  anything you do not trust.
+
+## Links
+
+- Model files: https://huggingface.co/cantonese-dev
+- ggk: https://github.com/gguf-io/gk
+- gguf-core: https://github.com/calcuis/gguf-core

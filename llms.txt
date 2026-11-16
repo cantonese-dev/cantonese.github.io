@@ -1,0 +1,26 @@
+# Cantonese TTS
+
+> Open text-to-speech model for Cantonese (廣東話): a 0.6B talker in GGUF that
+> runs locally with the `ggk` or `gguf-core` Python package and is served
+> behind an OpenAI-compatible endpoint, `POST /v1/audio/speech`. Supports
+> voice design (describe the voice) and voice cloning (reference recording).
+
+Quick start:
+
+```bash
+pip install ggk        # or: pip install gguf-core  (command `gguf` instead of `ggk`)
+ggk server engine -- --model cantonese-1.2-0.6b-q8_0.gguf --codec-model tts-tokenizer-12hz-q8_0.gguf
+curl http://127.0.0.1:8888/v1/audio/speech -H "Content-Type: application/json" \
+  -d '{"input": "今日天氣好好。", "voice": "A warm, low female voice."}' --output speech.mp3
+```
+
+## Docs
+
+- [Complete guide](llms-full.txt): install, model files, server options, every request field, voice design, voice cloning, pitfalls. Self-contained; read this one.
+- [Website](index.html): the same documentation for people, plus a browser playground.
+
+## Sources
+
+- [Model files](https://huggingface.co/cantonese-dev): the talker, the speech codec and the optional voice adapter (GGUF)
+- [ggk](https://github.com/gguf-io/gk): the runtime
+- [gguf-core](https://github.com/calcuis/gguf-core): the same runtime under the `gguf` command
